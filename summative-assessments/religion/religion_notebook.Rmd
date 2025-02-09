@@ -1,0 +1,304 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_json: true
+    split_at_heading: true
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.16.4
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+# Is religion a good thing?
+
+
+## Preliminaries
+
+As for the other notebooks in this set of assignments, tests in this notebook
+do not usually test if you have the right answer, but only if you have the
+*right sort* of answer.  *Be careful* -- the tests could pass, but your answer
+could still be wrong
+
+```{python}
+# Don't change this cell; just run it.
+
+import numpy as np
+# Make a random number generator.
+rng = np.random.default_rng()
+
+import pandas as pd
+# Safe setting for Pandas.  Needs Pandas version >= 1.5.
+pd.set_option('mode.copy_on_write', True)
+
+import matplotlib.pyplot as plt
+plt.style.use('fivethirtyeight')
+
+from client.api.notebook import Notebook
+ok = Notebook('religion.ok')
+```
+
+## To religion
+
+We [use](https://lisds.github.io/textbook/wild-pandas/noble_politics.html) the data
+published in:
+
+> Samuel P. Oliner and Pearl M. Oliner (1992) "The Altruistic Personality:
+> Rescuers of Jews in Nazi Europe". Free Press, New York. ISBN 0-02923829-3.
+
+See [the dataset
+page](https://github.com/matthew-brett/datasets/tree/master/oliner1988)
+for some more details.
+
+Samuel and Pearl Oliner had detailed interview data from:
+
+* 231 people who had sheltered Jews during the second world war (the *Rescuer*
+  group);
+* 53 people, roughly matched with the Rescuers on age, education, and
+  nationality, who claimed to have either sheltered Jews, or contributed to the
+  resistance, or both (the *Active* group);
+* 73 people, roughly matched to the Rescuers as above, who did not claim to
+  have sheltered Jews or helped the resistance (the *Bystander* group).
+
+The Oliners' interest was to find characteristics of the Rescuer group that
+might be related to their extraordinary choice to risk their lives or
+livelihood to shelter Jews.
+
+Here we are studying the data from table 6.6 of their book. The table
+cross-tabulates the answers to question D14 from their interview schedule:
+"Before the war, were you very religious, somewhat religious, not very
+religious or not at all religious?".
+
+You will find
+a [version](https://github.com/matthew-brett/datasets/tree/master/oliner1988)
+of the data from that table in the file `oliner_tab6_6.csv`.
+
+Read that table as a data frame.
+
+```{python}
+religion = ...
+religion
+```
+
+```{python}
+_ = ok.grade('q_01_religion')
+```
+
+Next clean up the table a bit.  First make a new table that contains all but
+the last row (with level "out of") that we do not need.  Next, to make indexing
+easier, replace the current table index (that is sequential row numbers) with
+the values in the "level" column, to make a new data frame, `top_religion`.
+
+```{python}
+top_religion = ...
+top_religion
+```
+
+```{python}
+_ = ok.grade('q_02_top_religion')
+```
+
+Let us restrict our attention to the Rescuers and the Actives, for the moment.
+Make a new table `rescuers_actives` that contains only the first two columns of
+`top_religion`:
+
+```{python}
+rescuers_actives = ...
+rescuers_actives
+```
+
+```{python}
+_ = ok.grade('q_03_rescuers_actives')
+```
+
+Superficially, it looks as if there is a greater tendency for Rescuers to be
+Very or Somewhat religious, than is the case for Actives.
+
+Could this tendency have come about by chance?  How could we address this?
+
+Let us first extend the technique that we used in the [noble politics]({{ site.baseurl }}/wild-pandas/noble_politics) notebook.
+
+We will assume a model world in which we have the same total number of
+rescuers as we see here, and the same total number of actives.
+
+We also have the same total numbers of people who are "Very", "Somewhat", "Not very" and "Not at all" religious.
+
+However, in this model world, there is no difference in the tendency of
+Rescuers and Actives to give any of the four levels of religiousness.  For
+example, in this world, a Rescuer is just as likely as an Active to answer
+"Very".
+
+To simulate this world, we could put 65 + 9 = 74 pieces of paper with "Very"
+written on them into a hat, along with 79 + 17 = 96 pieces of paper with
+"Somewhat" written on them, and so on.  Then we shake up the hat, and, for each
+of the 210 Rescuers we draw one piece of paper out of the hat, tabulate the
+result (Rescuer associated with "Very", or "Somewhat", etc), and put the piece
+of paper aside.  Similarly for the remaining 48 labels, that correspond to the
+Actives.  This gives us a new table of counts, where there is a random
+association between the group (Rescuer / Active) and Religiousness (Very,
+Somewhat, Not very, Not at all).
+
+Here is one trial in such a world:
+
+```{python}
+# Run this cell
+# Recreate the individual labels for group and religiousness.
+group = np.repeat(['rescuers', 'actives'], rescuers_actives.sum())
+religiousness = np.repeat(['Very', 'Somewhat', 'Not very', 'Not at all'],
+                          rescuers_actives.transpose().sum())
+# Shuffle the religiousness labels to give a random association.
+shuffled = rng.permutation(religiousness)
+# Make, show fake table.
+fake_table = pd.crosstab(shuffled, group)
+fake_table
+```
+
+Let's look in particular at the value for Very and Actives:
+
+```{python}
+# Run this cell
+actual_by_very = rescuers_actives.loc['Very', 'actives']
+actual_by_very
+```
+
+Compare this to the value from the fake table:
+
+```{python}
+# Run this cell
+fake_by_very = fake_table.loc['Very', 'actives']
+fake_by_very
+```
+
+Run this simulation *1000* times, to get 1000 samples of the Very, Actives number.
+
+**Careful**: if you run this simulation 10000 times, instead of 1000, it will
+take a long time.
+
+```{python}
+very_actives = ...
+
+# Show the first five values
+
+```
+
+```{python}
+_ = ok.grade('q_04_very_actives')
+```
+
+Use the next cell to plot a histogram of the `very_actives` values, and
+calculate the proportion of `very_actives` that are less than or equal to the
+value we observed in the original table.  You will need these for later.
+
+```{python}
+#- Plot a histogram of the very_actives values, calculate the proportion.
+plt.hist(very_actives)
+np.count_nonzero(very_actives <= actual_by_very) / n_iters
+```
+
+Now assume that we are interested in the idea that Rescuers tend to be more
+religious than Actives, on average.   We need some way of converting the
+categories -- Very; Somewhat; Not very; Not at all -- to a score of
+religiousness.
+
+Map the categories to numbers like this:
+
+* Very = 3
+* Somewhat = 2
+* Not very = 1
+* Not at all = 0
+
+For example, I can construct the scores for all 210 rescuers represented in the table with:
+
+```{python}
+# Run this cell
+rescuer_counts = rescuers_actives.loc[:, 'rescuers']
+rescuer_scores = np.repeat([3, 2, 1, 0], rescuer_counts)
+rescuer_scores
+```
+
+The mean religiousness scores for rescuers is:
+
+```{python}
+np.mean(rescuer_scores)
+```
+
+Follow the same recipe to reconstruct the 48 Actives scores:
+
+```{python}
+active_scores = ...
+active_scores
+```
+
+```{python}
+_ = ok.grade('q_05_active_scores')
+```
+
+Now you have the scores, you can do a permutation test.
+
+The observed mean difference in scores is:
+
+```{python}
+# Run this cell
+observed = np.mean(rescuer_scores) - np.mean(active_scores)
+observed
+```
+
+Now run a simulation of 10000 trials where, for each trial, you:
+
+* mix up the scores for the Rescuers and the actives;
+* The number of Rescuers is 210.  Select 210 scores at random to be fake
+  Rescuer scores; the remainder are fake Actives scores;
+* calculate the difference in means between these two fake groups, and store it
+  in an array `fake_mean_diffs`.
+
+```{python}
+fake_mean_diffs = ...
+
+# Show the first five values
+```
+
+```{python}
+_ = ok.grade('q_06_fake_mean_diffs')
+```
+
+Use the cell below to do a histogram of these values, and calculate the proportion of these fake values that are greater than or equal to the observed value:
+
+```{python}
+#- Use this cell to plot histogram and calculate proportion.
+
+```
+
+With the evidence you have here, what conclusion can you draw about the
+observed counts of self-ratings of religiousness, from `oliner_tab6_6.csv`?  Do
+you think the counts are compatible with random sampling, in a world where
+there is no association between being a rescuer or an active and the person's
+level of religiousness?  Justify your conclusion.
+
+
+<!-- #region {"manual_grade": true, "manual_problem_id": "religion_plausible"} -->
+*Write your answer here, replacing this text.*
+<!-- #endregion -->
+
+
+## Done
+
+You're finished with the assignment!  Be sure to...
+
+- **run all the tests** (the next cell has a shortcut for that),
+- **Save and Checkpoint** from the "File" menu.
+- Finally, **restart** the kernel for this notebook, and **run all the cells**,
+  to check that the notebook still works without errors.  Use the
+  "Kernel" menu, and choose "Restart and run all".  If you find any
+  problems, go back and fix them, save the notebook, and restart / run
+  all again, before submitting.  When you do this, you make sure that
+  we, your humble markers, will be able to mark your notebook.
+
+```{python}
+# For your convenience, you can run this cell to run all the tests at once!
+import os
+_ = [ok.grade(q[:-3]) for q in os.listdir("tests") if q.startswith('q')]
+```
