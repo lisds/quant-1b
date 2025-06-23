@@ -1,0 +1,290 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_json: true
+    notebook_metadata_filter: all,-language_info
+    split_at_heading: true
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.16.4
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+<!-- #region {"editable": true, "slideshow": {"slide_type": ""}} -->
+# Walking the Pandas walk
+
+<!-- #endregion -->
+
+## Preliminaries
+
+
+Before you begin, execute the following cell to load the provided tests. Each
+time you start your notebook, you will need to execute this cell again to load
+the tests.
+
+```{python}
+# Don't change this cell; just run it.
+
+import numpy as np
+import pandas as pd
+# Safe setting for Pandas.  Needs Pandas version >= 1.5.
+pd.set_option('mode.copy_on_write', True)
+
+import matplotlib.pyplot as plt
+plt.style.use('fivethirtyeight')
+
+from client.api.notebook import Notebook
+ok = Notebook('pandering.ok')
+```
+
+**Important**: The `ok` tests don't usually tell you that your answer is
+correct. More often, they help catch careless mistakes. It's up to you to
+ensure that your answer is correct. If you're not sure, ask someone (not for
+the answer, but for some guidance about your approach).
+
+
+## Unemployment
+
+
+The Federal Reserve Bank of St. Louis publishes data about jobs in the US.
+Below we've loaded data on unemployment in the United States.  There are many
+ways of defining unemployment, and our dataset includes two notions of the
+unemployment rate:
+
+1. Among people who are able to work and are looking for a full-time job, the
+   percentage who can't find a job.  This is called the Non-Employment Index,
+   or NI.
+2. Among people who are able to work and are looking for a full-time job, the
+   percentage who can't find any job *or* are only working at a part-time job.
+   The latter group is called "Part-Time for Economic Reasons", so the acronym
+   for this index is NI-PTER.  (Economists are great at marketing.)
+
+The source of the data is [here](https://fred.stlouisfed.org/categories/33509).
+
+
+**Question 1.** The data are in a CSV file called `unemployment.csv`.  Load
+that file into a DataFrame called `unemployment`.
+
+```{python}
+unemployment = ...
+unemployment
+```
+
+```{python}
+_ = ok.grade('q1_1')
+```
+
+**Question 2.** Sort the data in *decreasing* order by NI, naming the sorted
+DataFrame `by_ni`.  Create another DataFrame called `by_ni_pter` that's
+sorted in decreasing order by NI-PTER instead.
+
+```{python}
+by_ni = ...
+by_ni_pter = ...
+```
+
+```{python}
+_ = ok.grade('q1_2')
+```
+
+**Question 3.** Make a DataFrame containing the data for the 8 quarters when
+NI was greatest.  Call that DataFrame `greatest_ni`.
+
+```{python}
+greatest_ni = ...
+greatest_ni
+```
+
+```{python}
+_ = ok.grade('q1_3')
+```
+
+**Question 4.** It's believed that many people became PTER (recall: "Part-Time
+for Economic Reasons") in the "Great Recession" of 2008-2009.  NI-PTER is the
+percentage of people who are unemployed (and counted in the NI) plus the
+percentage of people who are PTER.  Compute a Series containing the percentage
+of people who were PTER in each quarter.  (The first element of the Series
+should correspond to the first row of `unemployment`, and so on.)
+
+*Note:* Use the original `unemployment` DataFrame for this.
+
+```{python}
+pter = ...
+
+# Show the first five values.
+
+```
+
+```{python}
+_ = ok.grade('q1_4')
+```
+
+**Question 5.** Add `pter` as a column named "PTER" to `unemployment` and sort
+the resulting DataFrame by that column in decreasing order.  Call the DataFrame
+`by_pter`.
+
+```{python}
+...
+by_pter = ...
+
+# Show the first five values.
+
+```
+
+```{python}
+_ = ok.grade('q1_5')
+```
+
+**Question 6.** Does it seem true that the PTER rate was very high during the
+Great Recession, compared to other periods in the dataset?  Explore the values
+in the DataFrame, and consider doing some plots.  Justify your answer by referring
+to specific values in the DataFrame or by generating a chart.
+
+
+<!-- #region {"manual_grade": true, "manual_problem_id": "basic_sorting_6"} -->
+*Write your answer here, replacing this text.*
+<!-- #endregion -->
+
+
+## 2. Birth Rates
+
+
+The following DataFrame gives census-based population estimates for each state in
+the USA, on July 1, 2014 and July 1, 2015. The last four columns describe the
+components of the estimated change in population during this time interval.
+*For all questions below, assume that the word "states" refers to all 52 rows
+including Puerto Rico & the District of Columbia.*
+
+```{python}
+# Don't change this cell; just run it.
+# From http://www2.census.gov/programs-surveys/popest/datasets/2010-2016/national/totals/nst-est2016-alldata.csv
+# See https://www2.census.gov/programs-surveys/popest/datasets/2010-2016/national/totals/nst-est2016-alldata.pdf
+#     for column descriptions.
+# Read the DataFrame
+raw_pop = pd.read_csv('nst-est2016-alldata.csv')
+# Select rows giving summaries at US state level (summary level).
+pop = raw_pop[raw_pop['SUMLEV'] == 40]
+# Select only the columns we're interested in
+good_cols = ['REGION', 'NAME', 'POPESTIMATE2014', 'POPESTIMATE2015',
+             'BIRTHS2015', 'DEATHS2015', 'NETMIG2015', 'RESIDUAL2015']
+pop = pop.loc[:, good_cols]
+# Give the columns new names
+good_names = ['REGION', 'NAME', '2014', '2015',
+             'BIRTHS', 'DEATHS', 'MIGRATION', 'OTHER']
+pop.columns = good_names
+# Show the first five rows.
+pop.head()
+```
+
+**Question 1.** Assign `us_birth_rate` to the total US annual birth rate during
+this time interval. The annual birth rate for a year-long period is the number
+of births in that period as a proportion of the population at the start of the
+period.
+
+```{python}
+us_birth_rate = ...
+us_birth_rate
+```
+
+```{python}
+_ = ok.grade('q2_1')
+```
+
+**Question 2.** Assign `fastest_growth` to a Series of the names of the five
+US states with the fastest overall population growth rates in *descending order
+of growth rate*.
+
+*Hint 1* - you may well find yourself adding another column to the `pop` data
+frame.
+
+*Hint 2* - remember this is a growth *rate*.  See above.
+
+```{python}
+fastest_growth = ...
+fastest_growth
+```
+
+```{python}
+_ = ok.grade('q2_2')
+```
+
+**Question 3.** Assign `n_movers` to the *number* of states for which the
+absolute annual *rate* of migration was higher than 1%. The annual rate of
+migration for a year-long period is the net number of migrations (in and out)
+as a proportion of the population at the start of the period. The `MIGRATION`
+column contains estimated annual net migration counts by state.
+
+```{python}
+n_movers = ...
+n_movers
+```
+
+```{python}
+_ = ok.grade('q2_3')
+```
+
+**Question 4.** Assign `n_west_births` to the total *number* of births that
+occurred in region 4 (the Western US).
+
+*Hint* - be careful - what type of values does the `REGION` column contain?
+Look at the `REGION` value for Puerto Rico.
+
+```{python}
+n_west_births = ...
+n_west_births
+```
+
+```{python}
+_ = ok.grade('q2_4')
+```
+
+**Question 5.** Assign `n_less_than_west_births` to the number of states that
+had a total population in 2015 that was smaller than the *number of babies born
+in region 4 (the Western US)* during this time interval.
+
+```{python}
+n_less_than_west_births = ...
+n_less_than_west_births
+```
+
+```{python}
+_ = ok.grade('q2_5')
+```
+
+**Question 6.** Was there an association between birth rate and death rate
+during this time interval? Use the code cell below to support your conclusion
+with a chart. If an association exists, what might explain it?
+
+
+<!-- #region {"manual_grade": true, "manual_problem_id": "births_6"} -->
+*Write your answer here, replacing this text.*
+<!-- #endregion -->
+
+```{python}
+#- Generate a chart here to support your conclusion
+
+```
+
+## Done
+
+You're finished with the assignment!  Be sure to...
+
+- **run all the tests** (the next cell has a shortcut for that),
+- **Save and Checkpoint** from the "File" menu.
+- Finally, **restart** the kernel for this notebook, and **run all the cells**,
+  to check that the notebook still works without errors.  Use the
+  "Kernel" menu, and choose "Restart and run all".  If you find any
+  problems, go back and fix them, save the notebook, and restart / run
+  all again, before submitting.  When you do this, you make sure that
+  we, your humble markers, will be able to mark your notebook.
+
+```{python}
+# For your convenience, you can run this cell to run all the tests at once!
+import os
+_ = [ok.grade(q[:-3]) for q in os.listdir("tests") if q.startswith('q')]
+```
